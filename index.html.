@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GamesFun — Пять букв</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #080b09;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+}
+.app {
+  width: 100%;
+  max-width: 460px;
+  padding: 24px 18px;
+  text-align: center;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 35px;
+}
+h1 {
+  font-size: 25px;
+  margin: 0;
+  color: #50ff83;
+  text-shadow: 0 0 15px #20ff65;
+}
+.close {
+  color: #8bffab;
+  font-size: 27px;
+  cursor: pointer;
+}
+.subtitle {
+  color: #929b94;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+#board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: min(100%, 340px);
+  margin: 0 auto 25px;
+}
+.tile {
+  aspect-ratio: 1;
+  border: 2px solid #29352d;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 27px;
+  font-weight: bold;
+  text-transform: uppercase;
+  background: #101612;
+  transition: .2s;
+}
+.tile.active {
+  border-color: #50ff83;
+  box-shadow: 0 0 9px #28ff6860;
+}
+.tile.correct { background: #168b42; border-color: #168b42; }
+.tile.present { background: #b38b20; border-color: #b38b20; }
+.tile.absent { background: #343b36; border-color: #343b36; }
+#message {
+  min-height: 24px;
+  color: #a6ffbb;
+  font-size: 15px;
+  margin: 15px 0;
+}
+#entry {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+  height: 2px;
+  opacity: .01;
+  font-size: 16px;
+  border: 0;
+  padding: 0;
+}
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+button {
+  border: 1px solid #39e96c;
+  border-radius: 10px;
+  background: #102719;
+  color: #75ff9a;
+  padding: 13px 22px;
+  font-size: 14px;
+  font-weight: bold;
+}
+button:active { background: #1b5930; }
+.hint {
+  margin-top: 25px;
+  color: #68736b;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="close" onclick="newGame()">↻</span>
+    <h1>GAMES FUN</h1>
+    <span class="close" onclick="newGame()">✕</span>
+  </header>
+
+  <div class="subtitle">Угадай слово из пяти букв</div>
+  <div id="board" onclick="activateKeyboard()"></div>
+  <div id="message">Нажми на поле и введи слово</div>
+
+  <div class="controls">
+    <button onclick="submitWord()">ПРОВЕРИТЬ</button>
+    <button onclick="eraseLetter()">⌫</button>
+  </div>
+
+  <div class="hint">6 попыток · 5 букв · Удачи!</div>
+  <input id="entry" type="text" maxlength="5"
+    autocomplete="off" autocapitalize="off"
+    spellcheck="false" lang="ru">
+</div>
+
+<script>
+const words = [
+  "арбуз", "банан", "ветер", "город", "дверь",
+  "дерев", "живот", "завод", "камин", "книга",
+  "кошка", "лимон", "масло", "медаль", "метро",
+  "морея", "народ", "океан", "пламя", "птица",
+  "радость", "рыбак", "сахар", "салют", "сосна",
+  "театр", "туман", "улица", "факел", "цветы",
+  "школа", "ягода"
+];
+
+const alphabet = "абвгдежзийклмнопрстуфхцчшщъыьэюя";
+let answer = "";
+let row = 0;
+let current = "";
+let finished = false;
+let guesses = [];
+
+const board = document.getElementById("board");
+const entry = document.getElementById("entry");
+const message = document.getElementById("message");
+
+function newGame() {
+  answer = words[Math.floor(Math.random() * words.length)];
+  row = 0;
+  current = "";
+  finished = false;
+  guesses = [];
+  message.textContent = "Нажми на поле и введи слово";
+  drawBoard();
+  entry.value = "";
+}
+
+function drawBoard() {
+  board.innerHTML = "";
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      if (r === row && c === current.length) tile.classList.add("active");
+      if (r < guesses.length) {
+        tile.textContent = guesses[r].word[c];
+        tile.classList.add(guesses[r].colors[c]);
+      } else if (r === row) {
+        tile.textContent = current[c] || "";
+      }
+      board.appendChild(tile);
+    }
+  }
+}
+
+function activateKeyboard() {
+  if (!finished) entry.focus();
+}
+
+entry.addEventListener("input", () => {
+  if (finished) return;
+  let value = entry.value.toLowerCase().replace(/[^а-яё]/g, "");
+  current = value.slice(0, 5);
+  entry.value = current;
+  drawBoard();
+});
+
+entry.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    submitWord();
+  }
+  if (event.key === "Backspace") {
+    current = current.slice(0, -1);
+    entry.value = current;
+    drawBoard();
+  }
+});
+
+function eraseLetter() {
+  if (finished) return;
+  current = current.slice(0, -1);
+  entry.value = current;
+  drawBoard();
+  activateKeyboard();
+}
+
+function submitWord() {
+  if (finished) return;
+
+  if (current.length !== 5) {
+    message.textContent = "Нужно ввести ровно 5 букв!";
+    return;
+  }
+
+  const colors = Array(5).fill("absent");
+  const remaining = answer.split("");
+
+  for (let i = 0; i < 5; i++) {
+    if (current[i] === answer[i]) {
+      colors[i] = "correct";
+      remaining[i] = null;
+    }
+  }
+
+  for (let i = 0; i < 5; i++) {
+    if (colors[i] === "correct") continue;
+    const index = remaining.indexOf(current[i]);
+    if (index !== -1) {
+      colors[i] = "present";
+      remaining[index] = null;
+    }
+  }
+
+  guesses.push({word: current, colors});
+  row++;
+  current = "";
+  entry.value = "";
+  drawBoard();
+
+  if (guesses[guesses.length - 1].colors.every(c => c === "correct")) {
+    message.textContent = "🎉 Отлично! Ты угадал слово!";
+    finished = true;
+  } else if (row === 6) {
+    message.textContent = "Слово было: " + answer.toUpperCase();
+    finished = true;
+  } else {
+    message.textContent = "Попытка " + (row + 1) + " из 6";
+  }
+
+  if (finished) {
+    setTimeout(() => {
+      message.textContent += " · Нажми ↻ для новой игры";
+    }, 100);
+  }
+}
+
+newGame();
+</script>
+</body>
+</html>
