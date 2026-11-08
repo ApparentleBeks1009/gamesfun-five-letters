@@ -223,6 +223,10 @@ function submitWord() {
   if (current.length !== 5) {
     message.textContent = "Нужно ввести ровно 5 букв!";
     return;
+    if (!words.includes(current)) {
+  message.textContent = "❌ Такого слова нет в словаре!";
+  return;
+}
   }
 
   const colors = Array(5).fill("absent");
