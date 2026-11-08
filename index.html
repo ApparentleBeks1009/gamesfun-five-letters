@@ -3,10 +3,11 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>GamesFun — Пять букв</title>
 <style>
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -16,34 +17,43 @@ body {
   display: flex;
   justify-content: center;
 }
+
 .app {
   width: 100%;
   max-width: 460px;
   padding: 24px 18px;
   text-align: center;
 }
+
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 35px;
 }
+
 h1 {
   font-size: 25px;
   margin: 0;
   color: #50ff83;
   text-shadow: 0 0 15px #20ff65;
 }
-.close {
+
+.icon {
   color: #8bffab;
   font-size: 27px;
   cursor: pointer;
+  border: none;
+  background: none;
+  padding: 5px;
 }
+
 .subtitle {
   color: #929b94;
   font-size: 14px;
   margin-bottom: 25px;
 }
+
 #board {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -51,6 +61,7 @@ h1 {
   width: min(100%, 340px);
   margin: 0 auto 25px;
 }
+
 .tile {
   aspect-ratio: 1;
   border: 2px solid #29352d;
@@ -62,39 +73,59 @@ h1 {
   font-weight: bold;
   text-transform: uppercase;
   background: #101612;
-  transition: .2s;
 }
+
 .tile.active {
   border-color: #50ff83;
   box-shadow: 0 0 9px #28ff6860;
 }
-.tile.correct { background: #168b42; border-color: #168b42; }
-.tile.present { background: #b38b20; border-color: #b38b20; }
-.tile.absent { background: #343b36; border-color: #343b36; }
+
+.tile.correct {
+  background: #168b42;
+  border-color: #168b42;
+}
+
+.tile.present {
+  background: #b38b20;
+  border-color: #b38b20;
+}
+
+.tile.absent {
+  background: #343b36;
+  border-color: #343b36;
+}
+
 #message {
-  min-height: 24px;
+  min-height: 25px;
   color: #a6ffbb;
   font-size: 15px;
   margin: 15px 0;
 }
+
+#message.error {
+  color: #ff7777;
+}
+
 #entry {
   position: fixed;
   left: 0;
   bottom: 0;
   width: 2px;
   height: 2px;
-  opacity: .01;
+  opacity: 0.01;
   font-size: 16px;
   border: 0;
   padding: 0;
 }
+
 .controls {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 18px;
 }
-button {
+
+button.action {
   border: 1px solid #39e96c;
   border-radius: 10px;
   background: #102719;
@@ -102,8 +133,13 @@ button {
   padding: 13px 22px;
   font-size: 14px;
   font-weight: bold;
+  cursor: pointer;
 }
-button:active { background: #1b5930; }
+
+button.action:active {
+  background: #1b5930;
+}
+
 .hint {
   margin-top: 25px;
   color: #68736b;
@@ -111,106 +147,196 @@ button:active { background: #1b5930; }
 }
 </style>
 </head>
+
 <body>
 <div class="app">
-  <header>
-    <span class="close" onclick="newGame()">↻</span>
-    <h1>GAMES FUN</h1>
-    <span class="close" onclick="newGame()">✕</span>
-  </header>
 
-  <div class="subtitle">Угадай слово из пяти букв</div>
-  <div id="board" onclick="activateKeyboard()"></div>
-  <div id="message">Нажми на поле и введи слово</div>
+<header>
+  <button class="icon" onclick="newGame()">↻</button>
+  <h1>GAMES FUN</h1>
+  <button class="icon" onclick="newGame()">✕</button>
+</header>
 
-  <div class="controls">
-    <button onclick="submitWord()">ПРОВЕРИТЬ</button>
-    <button onclick="eraseLetter()">⌫</button>
-  </div>
+<div class="subtitle">Угадай слово из пяти букв</div>
 
-  <div class="hint">6 попыток · 5 букв · Удачи!</div>
-  <input id="entry" type="text" maxlength="5"
-    autocomplete="off" autocapitalize="off"
-    spellcheck="false" lang="ru">
+<div id="board" onclick="activateKeyboard()"></div>
+
+<div id="message">Нажми на поле и введи слово</div>
+
+<div class="controls">
+  <button class="action" onclick="submitWord()">ПРОВЕРИТЬ</button>
+  <button class="action" onclick="eraseLetter()">⌫</button>
+</div>
+
+<div class="hint">6 попыток · 5 букв · Удачи!</div>
+
+<input
+  id="entry"
+  type="text"
+  maxlength="5"
+  autocomplete="off"
+  autocapitalize="off"
+  spellcheck="false"
+  lang="ru"
+>
+
 </div>
 
 <script>
-const words = [
+// Слова, которые могут загадаться
+const answers = [
   "арбуз", "банан", "ветер", "город", "дверь",
-  "дерев", "живот", "завод", "камин", "книга",
-  "кошка", "лимон", "масло", "медаль", "метро",
-  "морея", "народ", "океан", "пламя", "птица",
-  "радость", "рыбак", "сахар", "салют", "сосна",
-  "театр", "туман", "улица", "факел", "цветы",
-  "школа", "ягода"
+  "завод", "камин", "книга", "кошка", "лимон",
+  "масло", "метро", "народ", "океан", "пламя",
+  "птица", "рыбак", "сахар", "салют", "сосна",
+  "театр", "туман", "улица", "факел", "школа",
+  "ягода", "зебра", "трава", "ручка", "лампа",
+  "сумка", "диван", "билет", "облако", "груша"
 ];
 
-const alphabet = "абвгдежзийклмнопрстуфхцчшщъыьэюя";
+// Все допустимые слова.
+// Если слова нет в этом списке, игра его не примет.
+const validWords = new Set([
+  ...answers,
+  "аборт", "автор", "адрес", "акула", "алмаз",
+  "ангел", "арена", "атака", "банка", "башня",
+  "белка", "берег", "бровь", "буква", "булка",
+  "вагон", "важно", "ванна", "ведро", "вилка",
+  "вишня", "вокал", "волна", "волос", "ворон",
+  "время", "враги", "врата", "выход", "газон",
+  "гараж", "гений", "герой", "глина", "гнездо",
+  "голод", "голос", "грива", "грубо", "губка",
+  "доска", "дочка", "драка", "дрова", "дубль",
+  "душа", "еда", "ежик", "жажда", "жара",
+  "жизнь", "живот", "жираф", "закон", "замок",
+  "запах", "зверь", "зима", "золото", "игрок",
+  "игруш", "кабан", "кадр", "казна", "какая",
+  "капля", "карта", "каска", "кафе", "качка",
+  "кисть", "класс", "клоун", "ключи", "когда",
+  "колесо", "конец", "коньки", "короб", "космос",
+  "костюм", "кочка", "край", "краб", "кран",
+  "красив", "кредит", "кресло", "крик", "кровь",
+  "кружка", "крыша", "кукла", "кулак", "купол",
+  "курица", "куст", "лампа", "лапка", "левый",
+  "леска", "лето", "лидер", "линия", "лист",
+  "лодка", "ложка", "луна", "лыжи", "майка",
+  "марка", "маска", "медик", "мелок", "мечта",
+  "мешок", "минута", "молоко", "мороз", "мотор",
+  "музей", "музыка", "мышка", "мячик", "наука",
+  "небо", "нитка", "номер", "носки", "ночь",
+  "обед", "обувь", "огонь", "озеро", "окно",
+  "олень", "орден", "осень", "ответ", "отдых",
+  "пакет", "палец", "панда", "папка", "парус",
+  "паста", "пауза", "певец", "пенал", "песня",
+  "петух", "пицца", "план", "плечо", "плита",
+  "плоды", "повар", "поезд", "полка", "помощь",
+  "порог", "почта", "почка", "право", "празд",
+  "принц", "проба", "провод", "прыжок", "пункт",
+  "пусто", "пушка", "пятно", "работа", "радий",
+  "радость", "разум", "район", "рама", "ранг",
+  "раунд", "ребро", "река", "ремень", "риска",
+  "робот", "родня", "розга", "рубль", "рукав",
+  "рынок", "рысь", "салат", "самка", "сапог",
+  "сарай", "сборы", "свеча", "север", "семья",
+  "серия", "сетка", "силач", "сироп", "скала",
+  "склад", "склон", "слово", "смена", "смерть",
+  "снег", "собака", "солнце", "сонет", "спина",
+  "спорт", "стадо", "стена", "стиль", "столб",
+  "страна", "струна", "судно", "сфера", "схема",
+  "тайна", "танец", "тариф", "тесто", "точка",
+  "тропа", "труба", "трусы", "туфля", "уголь",
+  "удар", "узник", "ужин", "улыбка", "умный",
+  "урок", "утро", "фильм", "финиш", "форма",
+  "фрукт", "халат", "хвост", "хлеб", "хобби",
+  "холод", "хомяк", "центр", "цепь", "цирк",
+  "чайка", "чашка", "честь", "число", "чудо",
+  "шарик", "шахта", "шапка", "шарф", "шахмат",
+  "шофер", "шумно", "щенок", "экран", "эпоха",
+  "юность", "юбка", "юрист", "яблоко"
+].filter(word => [...word].length === 5));
+
+// Нормализация русских букв
+function normalize(word) {
+  return word.toLowerCase().replaceAll("ё", "е");
+}
+
+const board = document.getElementById("board");
+const entry = document.getElementById("entry");
+const message = document.getElementById("message");
+
 let answer = "";
 let row = 0;
 let current = "";
 let finished = false;
 let guesses = [];
 
-const board = document.getElementById("board");
-const entry = document.getElementById("entry");
-const message = document.getElementById("message");
-
 function newGame() {
-  answer = words[Math.floor(Math.random() * words.length)];
+  answer = answers[Math.floor(Math.random() * answers.length)];
   row = 0;
   current = "";
   finished = false;
   guesses = [];
+  entry.value = "";
+  message.className = "";
   message.textContent = "Нажми на поле и введи слово";
   drawBoard();
-  entry.value = "";
 }
 
 function drawBoard() {
   board.innerHTML = "";
+
   for (let r = 0; r < 6; r++) {
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement("div");
       tile.className = "tile";
-      if (r === row && c === current.length) tile.classList.add("active");
+
       if (r < guesses.length) {
-        tile.textContent = guesses[r].word[c];
+        tile.textContent = guesses[r].word[c].toUpperCase();
         tile.classList.add(guesses[r].colors[c]);
       } else if (r === row) {
-        tile.textContent = current[c] || "";
+        tile.textContent = current[c] ? current[c].toUpperCase() : "";
+        if (c === current.length && !finished) {
+          tile.classList.add("active");
+        }
       }
+
       board.appendChild(tile);
     }
   }
 }
 
+function showError(text) {
+  message.className = "error";
+  message.textContent = text;
+}
+
 function activateKeyboard() {
-  if (!finished) entry.focus();
+  if (!finished) {
+    entry.focus();
+  }
 }
 
 entry.addEventListener("input", () => {
   if (finished) return;
-  let value = entry.value.toLowerCase().replace(/[^а-яё]/g, "");
-  current = value.slice(0, 5);
+
+  current = normalize(entry.value)
+    .replace(/[^а-я]/g, "")
+    .slice(0, 5);
+
   entry.value = current;
   drawBoard();
 });
 
-entry.addEventListener("keydown", (event) => {
+entry.addEventListener("keydown", event => {
   if (event.key === "Enter") {
     event.preventDefault();
     submitWord();
-  }
-  if (event.key === "Backspace") {
-    current = current.slice(0, -1);
-    entry.value = current;
-    drawBoard();
   }
 });
 
 function eraseLetter() {
   if (finished) return;
+
   current = current.slice(0, -1);
   entry.value = current;
   drawBoard();
@@ -220,18 +346,24 @@ function eraseLetter() {
 function submitWord() {
   if (finished) return;
 
+  current = normalize(current);
+
   if (current.length !== 5) {
-    message.textContent = "Нужно ввести ровно 5 букв!";
+    showError("Введи ровно 5 букв!");
     return;
-    if (!words.includes(current)) {
-  message.textContent = "❌ Такого слова нет в словаре!";
-  return;
-}
   }
+
+  if (!validWords.has(current)) {
+    showError("❌ Такого слова нет в словаре!");
+    return;
+  }
+
+  message.className = "";
 
   const colors = Array(5).fill("absent");
   const remaining = answer.split("");
 
+  // Сначала ищем буквы на правильных местах
   for (let i = 0; i < 5; i++) {
     if (current[i] === answer[i]) {
       colors[i] = "correct";
@@ -239,23 +371,31 @@ function submitWord() {
     }
   }
 
+  // Затем ищем буквы на неправильных местах
   for (let i = 0; i < 5; i++) {
     if (colors[i] === "correct") continue;
+
     const index = remaining.indexOf(current[i]);
+
     if (index !== -1) {
       colors[i] = "present";
       remaining[index] = null;
     }
   }
 
-  guesses.push({word: current, colors});
+  guesses.push({
+    word: current,
+    colors: colors
+  });
+
   row++;
   current = "";
   entry.value = "";
+
   drawBoard();
 
-  if (guesses[guesses.length - 1].colors.every(c => c === "correct")) {
-    message.textContent = "🎉 Отлично! Ты угадал слово!";
+  if (colors.every(color => color === "correct")) {
+    message.textContent = "🎉 Победа! Ты угадал слово!";
     finished = true;
   } else if (row === 6) {
     message.textContent = "Слово было: " + answer.toUpperCase();
@@ -263,15 +403,10 @@ function submitWord() {
   } else {
     message.textContent = "Попытка " + (row + 1) + " из 6";
   }
-
-  if (finished) {
-    setTimeout(() => {
-      message.textContent += " · Нажми ↻ для новой игры";
-    }, 100);
-  }
 }
 
 newGame();
 </script>
 </body>
 </html>
+
